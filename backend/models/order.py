@@ -15,7 +15,7 @@ class OrderCreateRequest(BaseModel):
     customer_name: str = Field(..., min_length=2)
     phone_number: str = Field(..., min_length=8)
     order_details: str = Field(..., min_length=3)
-    language_preference: str = Field(default="en")
+    language_preference: str = Field(default="pending")
     auto_trigger_call: bool = Field(default=True)
 
 

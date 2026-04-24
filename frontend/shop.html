@@ -552,20 +552,9 @@
           <textarea id="co-address" rows="2" placeholder="Flat no., Street, City, State – PIN"></textarea>
         </div>
 
-        <div class="form-row">
-          <div class="form-group">
-            <label>Language Preference</label>
-            <select id="co-lang">
-              <option value="en">English</option>
-              <option value="hi">हिंदी (Hindi)</option>
-              <option value="kn">ಕನ್ನಡ (Kannada)</option>
-              <option value="mr">मराठी (Marathi)</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Pincode <span class="req">*</span></label>
-            <input id="co-pin" type="text" placeholder="560001" maxlength="6" />
-          </div>
+        <div class="form-group">
+          <label>Pincode <span class="req">*</span></label>
+          <input id="co-pin" type="text" placeholder="560001" maxlength="6" />
         </div>
 
         <!-- Payment -->
@@ -914,7 +903,6 @@
       const phone   = document.getElementById("co-phone").value.trim();
       const address = document.getElementById("co-address").value.trim();
       const pin     = document.getElementById("co-pin").value.trim();
-      const lang    = document.getElementById("co-lang").value;
 
       const errEl = document.getElementById("checkout-error");
       errEl.textContent = "";
@@ -947,7 +935,6 @@
             customer_name: name,
             phone_number: phone,
             order_details: orderDetails,
-            language_preference: lang,
             auto_trigger_call: true,
           }),
         });
@@ -958,7 +945,7 @@
         closeCheckout();
         document.getElementById("placed-order-id").textContent = data.id;
         document.getElementById("placed-phone").textContent = phone;
-        document.getElementById("placed-lang").textContent = LANG_NAMES[lang] || "English";
+        document.getElementById("placed-lang").textContent = "Selected during call";
         document.getElementById("confirm-modal").classList.add("open");
 
         // Reset cart
