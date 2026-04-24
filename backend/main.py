@@ -1,6 +1,7 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
 from backend.config import get_settings
@@ -31,5 +32,11 @@ app.add_middleware(
 app.include_router(orders_router)
 app.include_router(calls_router)
 app.include_router(voice_router)
+
+
+@app.get("/", include_in_schema=False)
+async def root_redirect() -> RedirectResponse:
+    return RedirectResponse(url="/shop.html")
+
 
 app.mount("/", StaticFiles(directory="frontend", html=True), name="frontend")
