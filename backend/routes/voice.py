@@ -24,9 +24,10 @@ def _build_gather_response(order_id: str, language: str, attempt: int, key: str 
 
     voice_response = VoiceResponse()
     gather = Gather(
-        input="speech",
+        input="dtmf speech",
         action=f"/voice-webhook?order_id={order_id}&attempt={attempt}",
         method="POST",
+        num_digits=1,
         language=twilio_lang,
         speech_timeout="auto",
     )
@@ -92,12 +93,13 @@ async def voice_webhook(request: Request, order_id: str, attempt: int = 1) -> Re
             action=f"/voice-webhook?order_id={order_id}&attempt={attempt}",
             method="POST",
             num_digits=1,
+            language="en-IN",
             timeout=5
         )
         gather.say("For English, press 1 or say English.", language="en-IN", voice="Polly.Raveena")
         gather.say("हिंदी के लिए, 2 दबाएं या हिंदी बोलें।", language="hi-IN", voice="Polly.Aditi")
-        gather.say("ಕನ್ನಡಕ್ಕಾಗಿ, 3 ಒತ್ತಿ.", language="kn-IN", voice="Google.kn-IN-Standard-A")
-        gather.say("मराठीसाठी, 4 दाबा.", language="mr-IN", voice="Google.mr-IN-Standard-B")
+        gather.say("ಕನ್ನಡಕ್ಕಾಗಿ, 3 ಒತ್ತಿ ಅಥವಾ ಕನ್ನಡ ಎಂದು ಹೇಳಿ.", language="kn-IN", voice="Google.kn-IN-Standard-A")
+        gather.say("मराठीसाठी, 4 दाबा किंवा मराठी बोला.", language="mr-IN", voice="Google.mr-IN-Standard-B")
         vr.append(gather)
         vr.redirect(f"/voice-webhook?order_id={order_id}&attempt={attempt + 1}", method="POST")
         return Response(content=str(vr), media_type="application/xml")
@@ -128,12 +130,19 @@ async def voice_webhook(request: Request, order_id: str, attempt: int = 1) -> Re
         response.hangup()
         return Response(content=str(response), media_type="application/xml")
 
-    intent = detect_intent(speech_result)
+    intent = "unknown"
+    if digits == "1":
+        intent = "yes"
+    elif digits == "2":
+        intent = "no"
+    else:
+        intent = detect_intent(speech_result)
+
     await log_call_event(
         db,
         order_id=order_id,
         event="USER_RESPONSE",
-        detail=f"Speech: {speech_result} | Intent: {intent}",
+        detail=f"Speech: {speech_result} | Digits: {digits} | Intent: {intent}",
     )
 
     response = VoiceResponse()
