@@ -21,6 +21,11 @@ class Settings(BaseSettings):
     max_retries: int = 2
     default_language: str = "en"
 
+    auth_session_secret: str = "replace-with-a-strong-session-secret"
+    auth_session_ttl_minutes: int = 480
+    admin_username: str = "admin"
+    admin_password: str = "admin123"
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

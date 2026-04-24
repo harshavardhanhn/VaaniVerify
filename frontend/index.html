@@ -84,9 +84,14 @@
         <h1>VaaniVerify Voice Order Bot</h1>
         <p>Hackathon dashboard: create orders, trigger outbound confirmation calls, and monitor call logs in real time.</p>
       </div>
-      <a href="/shop.html" style="display:inline-block;background:linear-gradient(135deg,#FF9900,#e88a00);color:#fff;font-weight:bold;padding:10px 22px;border-radius:20px;text-decoration:none;font-size:0.95rem;white-space:nowrap;">
-        🛒 Open VaaniStore
-      </a>
+      <div style="display:flex;gap:12px;">
+        <a href="/shop.html" style="display:inline-block;background:linear-gradient(135deg,#FF9900,#e88a00);color:#fff;font-weight:bold;padding:10px 22px;border-radius:20px;text-decoration:none;font-size:0.95rem;white-space:nowrap;">
+          🛒 Open VaaniStore
+        </a>
+        <button onclick="logout()" style="margin-top:0;background:linear-gradient(135deg,#b04a2a,#8a3a20);padding:10px 22px;border-radius:20px;width:auto;color:#fff;font-weight:bold;border:none;cursor:pointer;">
+          Logout
+        </button>
+      </div>
     </section>
 
     <section class="grid">
@@ -127,6 +132,11 @@
   </div>
 
   <script>
+    async function logout() {
+      await fetch("/auth/logout", { method: "POST" });
+      window.location.href = "/login.html";
+    }
+
     async function createOrder() {
       const payload = {
         customer_name: document.getElementById("name").value,

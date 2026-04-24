@@ -1,19 +1,46 @@
 from datetime import UTC, datetime
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 
+from backend.config import get_settings
 from backend.database import get_db
 from backend.models.order import OrderCreateRequest, OrderOut, OrderStatus, order_document_to_out
 from backend.routes.shared import log_call_event
 from backend.services.language import normalize_language
 from backend.services.twilio_service import twilio_service
+from backend.utils.auth import verify_session_token
 
 
 router = APIRouter(tags=["orders"])
+settings = get_settings()
+
+
+def _require_session(request: Request) -> dict:
+    token = request.cookies.get("vv_session")
+    if not token:
+        raise HTTPException(status_code=401, detail="Authentication required.")
+    try:
+        return verify_session_token(token, settings.auth_session_secret)
+    except ValueError as exc:
+        raise HTTPException(status_code=401, detail=str(exc))
+
+
+def require_user_or_admin(request: Request) -> dict:
+    session = _require_session(request)
+    if session.get("role") not in {"user", "admin", "customer"}:
+        raise HTTPException(status_code=403, detail="User access required.")
+    return session
+
+
+def require_admin(request: Request) -> dict:
+    session = _require_session(request)
+    if session.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required.")
+    return session
 
 
 @router.post("/create-order", response_model=OrderOut)
-async def create_order(payload: OrderCreateRequest) -> OrderOut:
+async def create_order(payload: OrderCreateRequest, _: dict = Depends(require_user_or_admin)) -> OrderOut:
     db = get_db()
     now = datetime.now(UTC)
     language = normalize_language(payload.language_preference)
@@ -47,7 +74,7 @@ async def create_order(payload: OrderCreateRequest) -> OrderOut:
 
 
 @router.get("/orders", response_model=list[OrderOut])
-async def list_orders() -> list[OrderOut]:
+async def list_orders(_: dict = Depends(require_admin)) -> list[OrderOut]:
     db = get_db()
     cursor = db.orders.find().sort("created_at", -1)
     docs = await cursor.to_list(length=100)

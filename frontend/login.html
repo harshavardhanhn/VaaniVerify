@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VaaniVerify - Login</title>
+  <style>
+    :root {
+      --bg: #f4f1ea;
+      --panel: #fffdf8;
+      --ink: #1f1c18;
+      --muted: #6f6557;
+      --accent: #d3a24f;
+      --accent-hover: #b77a1f;
+      --error: #b04a2a;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+      color: var(--ink);
+      background: radial-gradient(circle at 20% 20%, #fce6bd 0%, transparent 40%),
+                  radial-gradient(circle at 80% 0%, #d7edf7 0%, transparent 36%),
+                  var(--bg);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .auth-container {
+      background: rgba(255, 253, 248, 0.85);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(234, 223, 207, 0.5);
+      border-radius: 20px;
+      padding: 40px;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: 0 16px 40px rgba(40, 28, 16, 0.1);
+      position: relative;
+      overflow: hidden;
+    }
+    .auth-header {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+    .auth-header h1 {
+      margin: 0;
+      font-size: 2rem;
+      background: linear-gradient(135deg, #d89f3d, #b77a1f);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .auth-header p {
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+    .tabs {
+      display: flex;
+      margin-bottom: 24px;
+      border-radius: 12px;
+      background: rgba(216, 202, 181, 0.3);
+      padding: 4px;
+    }
+    .tab {
+      flex: 1;
+      text-align: center;
+      padding: 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+      color: var(--muted);
+      transition: all 0.3s ease;
+    }
+    .tab.active {
+      background: white;
+      color: var(--ink);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+    .form-group {
+      margin-bottom: 16px;
+    }
+    .form-group label {
+      display: block;
+      font-size: 0.9rem;
+      color: var(--muted);
+      margin-bottom: 6px;
+      font-weight: 600;
+    }
+    .form-group input {
+      width: 100%;
+      border-radius: 12px;
+      border: 1px solid #d8cab5;
+      padding: 12px 16px;
+      font-size: 1rem;
+      font-family: inherit;
+      background: rgba(255, 255, 255, 0.7);
+      transition: all 0.3s ease;
+    }
+    .form-group input:focus {
+      outline: none;
+      border-color: var(--accent);
+      background: white;
+      box-shadow: 0 0 0 4px rgba(211, 162, 79, 0.1);
+    }
+    .btn {
+      width: 100%;
+      padding: 14px;
+      border-radius: 12px;
+      border: none;
+      background: linear-gradient(135deg, #d89f3d, #b77a1f);
+      color: white;
+      font-size: 1.05rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      margin-top: 8px;
+    }
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(216, 159, 61, 0.3);
+    }
+    .btn:active {
+      transform: translateY(0);
+    }
+    .error-message {
+      color: var(--error);
+      font-size: 0.9rem;
+      text-align: center;
+      margin-top: 16px;
+      min-height: 20px;
+    }
+    .admin-hint {
+      text-align: center;
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-top: 24px;
+      padding-top: 16px;
+      border-top: 1px solid rgba(216, 202, 181, 0.4);
+    }
+  </style>
+</head>
+<body>
+  <div class="auth-container">
+    <div class="auth-header">
+      <h1>VaaniVerify</h1>
+      <p>Your Voice. Your Choice.</p>
+    </div>
+
+    <div class="tabs">
+      <div class="tab active" id="tab-login" onclick="switchTab('login')">Sign In</div>
+      <div class="tab" id="tab-signup" onclick="switchTab('signup')">Sign Up</div>
+    </div>
+
+    <div id="form-container">
+      <!-- Form content populated by JS -->
+    </div>
+
+    <div class="error-message" id="error-message"></div>
+    
+    <div class="admin-hint">
+      Admins: Login using your admin credentials to access the dashboard.
+    </div>
+  </div>
+
+  <script>
+    let currentMode = 'login'; // 'login' or 'signup'
+
+    function switchTab(mode) {
+      currentMode = mode;
+      document.getElementById('tab-login').classList.toggle('active', mode === 'login');
+      document.getElementById('tab-signup').classList.toggle('active', mode === 'signup');
+      document.getElementById('error-message').textContent = '';
+      renderForm();
+    }
+
+    function renderForm() {
+      const container = document.getElementById('form-container');
+      const btnText = currentMode === 'login' ? 'Sign In' : 'Create Account';
+      
+      container.innerHTML = `
+        <div class="form-group">
+          <label>Username</label>
+          <input type="text" id="username" placeholder="Enter your username" autocomplete="username" />
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="password" placeholder="Enter your password" autocomplete="current-password" />
+        </div>
+        <button class="btn" onclick="submitForm()">${btnText}</button>
+      `;
+      
+      // Add enter key listener
+      document.getElementById('password').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') submitForm();
+      });
+      document.getElementById('username').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') document.getElementById('password').focus();
+      });
+    }
+
+    async function submitForm() {
+      const usernameInput = document.getElementById('username').value.trim();
+      const passwordInput = document.getElementById('password').value;
+      const errorDiv = document.getElementById('error-message');
+      
+      if (!usernameInput || !passwordInput) {
+        errorDiv.textContent = 'Please enter both username and password';
+        return;
+      }
+
+      errorDiv.textContent = '';
+      
+      try {
+        const endpoint = currentMode === 'login' ? '/auth/login' : '/auth/signup';
+        const res = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: usernameInput, password: passwordInput })
+        });
+        
+        const data = await res.json();
+        
+        if (!res.ok) {
+          errorDiv.textContent = data.detail || 'An error occurred';
+          return;
+        }
+
+        if (currentMode === 'signup') {
+          // Auto login after signup or switch tab
+          switchTab('login');
+          document.getElementById('username').value = usernameInput;
+          errorDiv.textContent = 'Account created successfully! Please sign in.';
+          errorDiv.style.color = 'var(--accent)';
+        } else {
+          // Handle successful login
+          if (data.role === 'admin') {
+            window.location.href = '/index.html';
+          } else {
+            window.location.href = '/shop.html';
+          }
+        }
+      } catch (err) {
+        errorDiv.textContent = 'Network error. Please try again.';
+      }
+    }
+
+    // Initialize
+    renderForm();
+  </script>
+</body>
+</html>

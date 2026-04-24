@@ -408,10 +408,11 @@
       </div>
 
       <div class="header-actions">
-        <div class="hdr-btn" onclick="window.location='/index.html'">
-          <span>Admin</span>
-          <b>Dashboard</b>
+        <div class="hdr-btn" onclick="logout()">
+          <span>Account</span>
+          <b>Logout</b>
         </div>
+
         <div class="cart-btn" onclick="openCart()" title="Cart">
           <span class="cart-icon">🛒</span>
           <b>Cart</b>
@@ -620,7 +621,6 @@
       </div>
       <div>
         <button class="btn-continue" onclick="continueShop()">Continue Shopping</button>
-        <button class="btn-dashboard" onclick="window.location='/index.html'">Admin Dashboard</button>
       </div>
     </div>
   </div>
@@ -643,7 +643,6 @@
       <a href="#">Help & Support</a>
       <a href="#">Privacy Policy</a>
       <a href="#">Terms & Conditions</a>
-      <a href="/index.html">Admin Dashboard</a>
     </div>
     <div class="footer-bottom">© 2025 VaaniStore · Powered by VaaniVerify Voice Confirmation</div>
   </footer>
@@ -652,6 +651,11 @@
        JAVASCRIPT
   ══════════════════════════════════════════════════════════════ -->
   <script>
+    async function logout() {
+      await fetch('/auth/logout', { method: 'POST' });
+      window.location.href = '/login.html';
+    }
+
     /* ── Product Catalog ──────────────────────────────────────── */
     const CATALOG = [
       // Best Sellers
