@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VaaniVerify Dashboard</title>
+  <style>
+    :root {
+      --bg: #f4f1ea;
+      --panel: #fffdf8;
+      --ink: #1f1c18;
+      --muted: #6f6557;
+      --ok: #2f7d32;
+      --warn: #b04a2a;
+      --pending: #0b5fa8;
+      --accent: #d3a24f;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+      color: var(--ink);
+      background: radial-gradient(circle at 20% 20%, #fce6bd 0%, transparent 40%),
+                  radial-gradient(circle at 80% 0%, #d7edf7 0%, transparent 36%),
+                  var(--bg);
+      min-height: 100vh;
+      padding: 24px;
+    }
+    .wrap {
+      max-width: 1120px;
+      margin: 0 auto;
+      display: grid;
+      gap: 18px;
+    }
+    .card {
+      background: var(--panel);
+      border: 1px solid #eadfcf;
+      border-radius: 14px;
+      padding: 18px;
+      box-shadow: 0 8px 24px rgba(40, 28, 16, 0.08);
+    }
+    h1 { margin: 0 0 8px 0; font-size: 1.8rem; }
+    p { margin: 0; color: var(--muted); }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+    }
+    label { font-size: 0.9rem; color: var(--muted); display: block; margin: 8px 0 4px; }
+    input, select, textarea, button {
+      width: 100%;
+      border-radius: 10px;
+      border: 1px solid #d8cab5;
+      padding: 10px;
+      font-size: 0.95rem;
+      font-family: inherit;
+    }
+    textarea { min-height: 88px; resize: vertical; }
+    button {
+      cursor: pointer;
+      border: 0;
+      background: linear-gradient(135deg, #d89f3d, #b77a1f);
+      color: white;
+      font-weight: bold;
+      margin-top: 10px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.92rem;
+    }
+    th, td { text-align: left; padding: 8px; border-bottom: 1px solid #eee1cd; }
+    .tag { padding: 2px 8px; border-radius: 999px; color: #fff; font-size: 0.8rem; }
+    .pending { background: var(--pending); }
+    .confirmed { background: var(--ok); }
+    .cancelled { background: var(--warn); }
+    .small { font-size: 0.82rem; color: var(--muted); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <section class="card">
+      <h1>VaaniVerify Voice Order Bot</h1>
+      <p>Hackathon dashboard: create orders, trigger outbound confirmation calls, and monitor call logs in real time.</p>
+    </section>
+
+    <section class="grid">
+      <div class="card">
+        <h3>Create Order</h3>
+        <label>Customer Name</label>
+        <input id="name" placeholder="Ravi Kumar" />
+        <label>Phone Number (E.164)</label>
+        <input id="phone" placeholder="+919876543210" />
+        <label>Order Details</label>
+        <textarea id="details" placeholder="1x Mixer Grinder, Cash on Delivery"></textarea>
+        <label>Language</label>
+        <select id="lang">
+          <option value="en">English</option>
+          <option value="hi">Hindi</option>
+          <option value="kn">Kannada</option>
+          <option value="mr">Marathi</option>
+        </select>
+        <button onclick="createOrder()">Create + Trigger Call</button>
+        <p id="msg" class="small"></p>
+      </div>
+
+      <div class="card">
+        <h3>Recent Logs</h3>
+        <div id="logs" class="small">Loading logs...</div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h3>Orders</h3>
+      <table>
+        <thead>
+          <tr><th>Name</th><th>Phone</th><th>Order</th><th>Language</th><th>Status</th><th>Action</th></tr>
+        </thead>
+        <tbody id="orders"></tbody>
+      </table>
+    </section>
+  </div>
+
+  <script>
+    async function createOrder() {
+      const payload = {
+        customer_name: document.getElementById("name").value,
+        phone_number: document.getElementById("phone").value,
+        order_details: document.getElementById("details").value,
+        language_preference: document.getElementById("lang").value,
+        auto_trigger_call: true
+      };
+
+      const res = await fetch("/create-order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      document.getElementById("msg").textContent = res.ok
+        ? `Order created: ${data.id}`
+        : `Error: ${data.detail || "failed"}`;
+      refresh();
+    }
+
+    async function triggerCall(orderId) {
+      await fetch("/trigger-call", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ order_id: orderId })
+      });
+      refresh();
+    }
+
+    function statusClass(status) {
+      if (status === "Confirmed") return "confirmed";
+      if (status === "Cancelled") return "cancelled";
+      return "pending";
+    }
+
+    async function refreshOrders() {
+      const res = await fetch("/orders");
+      const rows = await res.json();
+      const body = document.getElementById("orders");
+      body.innerHTML = rows.map(row => `
+        <tr>
+          <td>${row.customer_name}</td>
+          <td>${row.phone_number}</td>
+          <td>${row.order_details}</td>
+          <td>${row.language_preference}</td>
+          <td><span class="tag ${statusClass(row.status)}">${row.status}</span></td>
+          <td><button onclick="triggerCall('${row.id}')">Trigger Call</button></td>
+        </tr>
+      `).join("");
+    }
+
+    async function refreshLogs() {
+      const res = await fetch("/logs?limit=12");
+      const logs = await res.json();
+      const box = document.getElementById("logs");
+      box.innerHTML = logs.map(log =>
+        `<div><b>${log.event}</b> [${new Date(log.created_at).toLocaleTimeString()}] - ${log.detail || ""}</div>`
+      ).join("") || "No logs yet";
+    }
+
+    async function refresh() {
+      await Promise.all([refreshOrders(), refreshLogs()]);
+    }
+
+    refresh();
+    setInterval(refresh, 5000);
+  </script>
+</body>
+</html>

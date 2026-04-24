@@ -1,0 +1,23 @@
+[
+  {
+    "customer_name": "Asha Patil",
+    "phone_number": "+919900001234",
+    "order_details": "2x Organic Honey",
+    "language_preference": "mr",
+    "auto_trigger_call": true
+  },
+  {
+    "customer_name": "Ramesh Gowda",
+    "phone_number": "+919944445555",
+    "order_details": "1x Water Purifier",
+    "language_preference": "kn",
+    "auto_trigger_call": true
+  },
+  {
+    "customer_name": "Neha Singh",
+    "phone_number": "+919988887777",
+    "order_details": "3x Protein Bars",
+    "language_preference": "hi",
+    "auto_trigger_call": false
+  }
+]
