@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>VaaniVerify Dashboard</title>
+  <title>VaaniVerify Admin Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     :root {
       --bg: #f4f1ea;
@@ -75,6 +76,17 @@
     .confirmed { background: var(--ok); }
     .cancelled { background: var(--warn); }
     .small { font-size: 0.82rem; color: var(--muted); }
+    .stat-card {
+      background: linear-gradient(135deg, #f9f5ed, #fff);
+      border: 1px solid #eadfcf; border-radius: 12px;
+      padding: 16px; display: flex; flex-direction: column; justify-content: center;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+    }
+    .stat-value { font-size: 1.8rem; font-weight: bold; color: var(--accent); margin-bottom: 4px; }
+    .stat-label { font-size: 0.9rem; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+    .charts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 18px; margin-bottom: 18px; }
+    .chart-container { position: relative; height: 260px; width: 100%; background: #fff; border: 1px solid #eadfcf; border-radius: 12px; padding: 12px; }
+    @media (max-width: 768px) { .charts-grid { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
@@ -91,6 +103,40 @@
         <button onclick="logout()" style="margin-top:0;background:linear-gradient(135deg,#b04a2a,#8a3a20);padding:10px 22px;border-radius:20px;width:auto;color:#fff;font-weight:bold;border:none;cursor:pointer;">
           Logout
         </button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h3>📈 Sales & Analytics Overview</h3>
+      <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-bottom: 20px;">
+        <div class="stat-card">
+          <div class="stat-value" id="stat-revenue">₹0</div>
+          <div class="stat-label">Total Revenue</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="stat-orders">0</div>
+          <div class="stat-label">Total Orders</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="stat-confirmed" style="color: var(--ok)">0</div>
+          <div class="stat-label">Confirmed Orders</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="stat-cancelled" style="color: var(--warn)">0</div>
+          <div class="stat-label">Cancelled Orders</div>
+        </div>
+      </div>
+      
+      <div class="charts-grid">
+        <div class="chart-container">
+          <canvas id="statusChart"></canvas>
+        </div>
+        <div class="chart-container">
+          <canvas id="langChart"></canvas>
+        </div>
+        <div class="chart-container">
+          <canvas id="categoryChart"></canvas>
+        </div>
       </div>
     </section>
 
@@ -136,7 +182,8 @@
         customer_name: document.getElementById("name").value,
         phone_number: document.getElementById("phone").value,
         order_details: document.getElementById("details").value,
-        auto_trigger_call: true
+        auto_trigger_call: true,
+        total_amount: 0 // Admin manual orders don't track revenue yet
       };
 
       const res = await fetch("/create-order", {
@@ -191,8 +238,90 @@
       ).join("") || "No logs yet";
     }
 
+    let statusChartInstance = null;
+    let langChartInstance = null;
+    let categoryChartInstance = null;
+
+    async function refreshAnalytics() {
+      const res = await fetch("/api/analytics");
+      if (!res.ok) return;
+      const data = await res.json();
+      
+      // Update Stats
+      document.getElementById("stat-revenue").textContent = "₹" + data.total_revenue.toLocaleString("en-IN");
+      document.getElementById("stat-orders").textContent = data.total_orders;
+      document.getElementById("stat-confirmed").textContent = data.status_counts["Confirmed"] || 0;
+      document.getElementById("stat-cancelled").textContent = data.status_counts["Cancelled"] || 0;
+
+      // Update Status Chart
+      const statusCtx = document.getElementById('statusChart').getContext('2d');
+      const statusData = {
+        labels: ['Confirmed', 'Pending', 'Cancelled'],
+        datasets: [{
+          data: [data.status_counts["Confirmed"] || 0, data.status_counts["Pending"] || 0, data.status_counts["Cancelled"] || 0],
+          backgroundColor: ['#2f7d32', '#0b5fa8', '#b04a2a']
+        }]
+      };
+      if (statusChartInstance) {
+        statusChartInstance.data = statusData;
+        statusChartInstance.update();
+      } else {
+        statusChartInstance = new Chart(statusCtx, {
+          type: 'doughnut',
+          data: statusData,
+          options: { responsive: true, maintainAspectRatio: false, plugins: { title: { display: true, text: 'Order Status Breakdown' } } }
+        });
+      }
+
+      // Update Language Chart
+      const langCtx = document.getElementById('langChart').getContext('2d');
+      const langLabels = Object.keys(data.language_counts);
+      const langVals = Object.values(data.language_counts);
+      const langData = {
+        labels: langLabels,
+        datasets: [{
+          label: 'Orders by Language',
+          data: langVals,
+          backgroundColor: ['#4a90e2', '#d89f3d', '#e67e22', '#9b59b6', '#34495e']
+        }]
+      };
+      if (langChartInstance) {
+        langChartInstance.data = langData;
+        langChartInstance.update();
+      } else {
+        langChartInstance = new Chart(langCtx, {
+          type: 'bar',
+          data: langData,
+          options: { responsive: true, maintainAspectRatio: false, plugins: { title: { display: true, text: 'Voice Confirmation Languages' }, legend: { display: false } } }
+        });
+      }
+
+      // Update Category Chart
+      const catCtx = document.getElementById('categoryChart').getContext('2d');
+      const catLabels = Object.keys(data.category_counts).map(c => c.split('-').map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join(' '));
+      const catVals = Object.values(data.category_counts);
+      const catData = {
+        labels: catLabels,
+        datasets: [{
+          label: 'Top Selling Categories',
+          data: catVals,
+          backgroundColor: ['#e74c3c', '#8e44ad', '#3498db', '#1abc9c', '#f1c40f', '#e67e22']
+        }]
+      };
+      if (categoryChartInstance) {
+        categoryChartInstance.data = catData;
+        categoryChartInstance.update();
+      } else {
+        categoryChartInstance = new Chart(catCtx, {
+          type: 'pie',
+          data: catData,
+          options: { responsive: true, maintainAspectRatio: false, plugins: { title: { display: true, text: 'Top Selling Categories (Confirmed)' }, legend: { position: 'right' } } }
+        });
+      }
+    }
+
     async function refresh() {
-      await Promise.all([refreshOrders(), refreshLogs()]);
+      await Promise.all([refreshOrders(), refreshLogs(), refreshAnalytics()]);
     }
 
     refresh();

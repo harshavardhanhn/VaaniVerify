@@ -920,6 +920,7 @@
           const p = CATALOG.find(x => x.id === +id);
           return `${qty}x ${p.name} (₹${p.price})`;
         }).join("; ");
+      const cartCategories = Array.from(new Set(Object.entries(cart).map(([id, _]) => CATALOG.find(x => x.id === +id).category)));
       const total = cartTotal() + (cartTotal() >= 499 ? 0 : 49);
       const orderDetails = `${itemsSummary} | Total: ₹${total} | Payment: ${paymentLabel} | Address: ${address}, PIN ${pin}`;
 
@@ -936,6 +937,8 @@
             phone_number: phone,
             order_details: orderDetails,
             auto_trigger_call: true,
+            total_amount: total,
+            categories: cartCategories,
           }),
         });
         const data = await res.json();

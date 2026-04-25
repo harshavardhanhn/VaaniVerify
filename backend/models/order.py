@@ -17,6 +17,8 @@ class OrderCreateRequest(BaseModel):
     order_details: str = Field(..., min_length=3)
     language_preference: str = Field(default="pending")
     auto_trigger_call: bool = Field(default=True)
+    total_amount: float = Field(default=0.0)
+    categories: list[str] = Field(default_factory=list)
 
 
 class TriggerCallRequest(BaseModel):
@@ -34,6 +36,8 @@ class OrderOut(BaseModel):
     last_intent: Optional[str] = None
     created_at: datetime
     updated_at: datetime
+    total_amount: float = 0.0
+    categories: list[str] = Field(default_factory=list)
 
 
 class CallLog(BaseModel):
@@ -56,4 +60,6 @@ def order_document_to_out(doc: dict[str, Any]) -> OrderOut:
         last_intent=doc.get("last_intent"),
         created_at=doc["created_at"],
         updated_at=doc["updated_at"],
+        total_amount=doc.get("total_amount", 0.0),
+        categories=doc.get("categories", []),
     )
